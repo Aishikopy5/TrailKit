@@ -51,7 +51,26 @@ export default function VoiceBriefing({ tripId, destination }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {isPlaying && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '3px', height: '24px' }}>
+            {[0.6, 1.2, 0.4, 0.9, 1.4, 0.7, 1.1, 0.5].map((scale, i) => (
+              <span
+                key={i}
+                style={{
+                  display: 'inline-block',
+                  width: '3px',
+                  height: '100%',
+                  background: 'linear-gradient(to top, #059669, #38bdf8)',
+                  borderRadius: '2px',
+                  animation: `soundwave 0.8s ease-in-out infinite alternate`,
+                  animationDelay: `${i * 0.1}s`,
+                }}
+              />
+            ))}
+          </div>
+        )}
+
         {isPlaying ? (
           <button
             type="button"

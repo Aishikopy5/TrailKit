@@ -40,7 +40,7 @@ const PRESETS = [
   },
 ];
 
-export default function TripForm({ onSubmit, isLoading }) {
+export default function TripForm({ onSubmit, isLoading, onDestinationChange }) {
   const today = new Date().toISOString().split('T')[0];
   const defaultEnd = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
 
@@ -59,6 +59,7 @@ export default function TripForm({ onSubmit, isLoading }) {
 
   const handleApplyPreset = (preset) => {
     setDestination(preset.destination);
+    if (onDestinationChange) onDestinationChange(preset.destination);
     setActivityStyle(preset.style);
     setMaxBudget(preset.budget);
     setCurrency(preset.currency);
@@ -193,7 +194,10 @@ export default function TripForm({ onSubmit, isLoading }) {
               <input
                 type="text"
                 value={destination}
-                onChange={(e) => setDestination(e.target.value)}
+                onChange={(e) => {
+                  setDestination(e.target.value);
+                  if (onDestinationChange) onDestinationChange(e.target.value);
+                }}
                 placeholder="e.g. Leh, Ladakh or Manali"
                 style={{ width: '100%', paddingLeft: '38px' }}
                 required
