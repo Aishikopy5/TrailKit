@@ -8,16 +8,31 @@
 [![Vite](https://img.shields.io/badge/Vite-5-646CFF.svg?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
 [![Three.js](https://img.shields.io/badge/Three.js-WebGL-000000.svg?style=for-the-badge&logo=three.js&logoColor=white)](https://threejs.org)
 [![TailwindCSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC.svg?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
-[![Tests Passing](https://img.shields.io/badge/Pytest-43%2F43%20Passing-brightgreen.svg?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org)
+[![Tests Passing](https://img.shields.io/badge/Pytest-47%2F47%20Passing-brightgreen.svg?style=for-the-badge&logo=pytest&logoColor=white)](https://docs.pytest.org)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Agent Skill Standard](https://img.shields.io/badge/Agent%20Skill-Open%20Standard%20v1.0-blueviolet.svg?style=for-the-badge)](skills/trailkit-defensive-planner/SKILL.md)
 
 **Hugging Face Weekend Hackathon 2026** · `#hf26challenge` · `#devchallenge` · `#weekendchallenge`  
-**Theme:** *Build for a Friend* (Built for friends & families venturing into high-altitude treks and rugged outdoors where safety cannot be left to an LLM's imagination).
+**Theme:** *Build for a Friend* (Built for friends & families venturing into high-altitude treks and rugged outdoors where safety cannot be left to an LLM's imagination).  
+**Prize Track Submission:** 🏆 **Best Open-Source AI Project**
 
-[Explore Live Demo](http://localhost:5173) · [API Documentation](http://localhost:8000/docs) · [Architecture Spec](#-system-architecture) · [Safety Rubric](#-the-14-point-zero-harm-safety-rubric)
+[Explore Live Demo](http://localhost:5173) · [API Documentation](http://localhost:8000/docs) · [Architecture Spec](#-system-architecture) · [Model Harness](#-original-defensive-model-harness-harness) · [Agent Skill](#-agent-skill-open-standard-compliance)
 
 </div>
+
+---
+
+## 🏆 Best Open-Source AI Project Track Compliance
+
+TrailKit addresses all core tenets of the **Best Open-Source AI Project** challenge:
+
+| Challenge Requirement | TrailKit Implementation | Location |
+|---|---|---|
+| **1. Open-Source or Open-Weight AI Core** | Powered by **Google Gemma 2 (2B / 9B)** open weights with Tinker fine-tuning adapter, hosted Hugging Face endpoints, and air-gapped local **Ollama** support. | [`backend/app/services/planner.py`](backend/app/services/planner.py) |
+| **2. Original Open-Source Model Harness** | Built an original **Defensive Model Harness** (`DefensiveModelHarness`) that solves open-weight LLM vulnerabilities: prompt injection sandboxing, robust JSON extraction, and deterministic AST/regex medical & altitude repair. | [`harness/`](harness/) & [`harness/cli.py`](harness/cli.py) |
+| **3. Agent Skill Open Standard Compliance** | Authored a standard agent skill with YAML frontmatter, operational triage workflow, and 14-point safety rules consumable by any AI agent. | [`skills/trailkit-defensive-planner/SKILL.md`](skills/trailkit-defensive-planner/SKILL.md) |
+| **4. Public Repository & Open-Source License** | Published publicly on GitHub under the permissive **MIT License**. | [GitHub Repo](https://github.com/Aishikopy5/TrailKit) · [`LICENSE`](LICENSE) |
 
 ---
 
@@ -224,7 +239,7 @@ Visit `http://localhost:5173` to start using TrailKit!
 
 ## 🧪 Testing & Verification
 
-TrailKit includes a comprehensive **43-case test suite** covering break-tests, prompt injection attacks, prescription drug rejection, altitude acclimatization triggers, child safety enforcement, and security audits:
+TrailKit includes a comprehensive **47-case test suite** covering break-tests, prompt injection attacks, prescription drug rejection, altitude acclimatization triggers, child safety enforcement, security audits, and the defensive model harness:
 
 ```bash
 cd backend
@@ -232,6 +247,11 @@ cd backend
 ```
 
 ### Test Suite Highlights:
+- `tests/test_harness.py`:
+  - `test_harness_offline_fallback`: Verifies model harness offline tier execution without network or API keys.
+  - `test_harness_prescription_drug_sanitization`: Verifies Diamox dosage hallucination is intercepted by harness AST repair.
+  - `test_harness_child_protection_enforcement`: Tests automatic injection of pediatric protection gear.
+  - `test_harness_prompt_fencing`: Proves untrusted user queries and RAG data are strictly sandboxed inside XML tags.
 - `tests/test_break_suite.py`:
   - `test_diamox_prescription_blocked`: Verifies Diamox dosage hallucination is caught and sanitized to safe OTC hydration.
   - `test_high_altitude_acclimatization_mandated`: Verifies that planning a 3,500m ascent on Day 1 is repaired into a mandatory rest and hydration protocol.
@@ -244,6 +264,36 @@ cd backend
   - `test_pii_scrubbed_from_telemetry`: Verifies traveler medical history is redacted before logs.
 - `tests/test_feature_routes.py`:
   - Verifies custom trip builder validation, route optimization, best visiting times, and emergency export endpoints.
+
+---
+
+## 🛡️ Original Defensive Model Harness (`harness/`)
+
+To solve the challenges of deploying open-weight models (Google Gemma 2, Llama 3, Mistral) in physical backcountry operations, TrailKit includes an **original open-source model harness**:
+
+- **Bidirectional Data Fencing**: Isolates user prompts in `<user_spec>` and RAG context in `<retrieved_data>` to stop prompt injections.
+- **Robust JSON Extraction**: Recovers valid structured JSON from code fences, conversational preambles, or unformatted text.
+- **Deterministic AST & Regex Repair Engine**: Post-processes output to enforce OTC medical allowlists, Day 1 acclimatization rest, and child protection gear.
+- **Multi-Provider Connectivity**: Connect seamlessly with **Ollama** (air-gapped local inference), **Hugging Face Inference API**, **OpenAI-compatible endpoints** (vLLM/TGI), or the **Offline Deterministic Engine**.
+
+### CLI Quickstart
+```bash
+# Run harness with offline deterministic engine
+python -m harness.cli --destination "Leh Ladakh" --provider offline_deterministic --has-child
+
+# Run harness with local Gemma 2 via Ollama
+python -m harness.cli --destination "Spiti Valley" --provider ollama --model gemma2:2b
+```
+
+---
+
+## 🤖 Agent Skill: Open Standard Compliance
+
+TrailKit includes a dedicated agent skill in [`skills/trailkit-defensive-planner/SKILL.md`](skills/trailkit-defensive-planner/SKILL.md) compliant with the **Agent Skill Open Standard v1.0**.
+
+- **Standard YAML Frontmatter**: Includes metadata (`name`, `description`) recognized by modern agentic architectures.
+- **Agent Interoperability**: Directly usable by autonomous agent platforms including **Antigravity**, **Claude Desktop**, **AutoGen**, **CrewAI**, and **LangChain**.
+- **Deterministic Guardrails for Autonomous Agents**: Ensures that autonomous AI agents cannot inadvertently endanger travelers when generating travel recommendations.
 
 ---
 
@@ -344,10 +394,19 @@ d:/HF26_KLY/
 │   │   └── index.css            # Tailwind CSS directives & custom styling
 │   ├── Dockerfile               # Vite build + Nginx Alpine production image
 │   └── nginx.conf               # Production Nginx reverse-proxy & caching
+├── harness/                     # Original Defensive Model Harness for Open-Weight LLMs
+│   ├── __init__.py              # Package entrypoint (DefensiveModelHarness, HarnessConfig)
+│   ├── defensive_harness.py     # Prompt sandboxing, JSON recovery, and AST repair engine
+│   ├── cli.py                   # Model evaluation CLI (`python -m harness.cli`)
+│   └── README.md                # Harness architectural spec & benchmarks
+├── skills/                      # Agent Skill Open Standard v1.0 Compliant Skills
+│   └── trailkit-defensive-planner/
+│       └── SKILL.md             # Autonomous agent skill specification
 ├── docs/
 │   ├── DEPLOYMENT_GUIDE.md      # Comprehensive production deployment manual
 │   └── FAILURE_MODES_AND_TEST_PLAN.md # Red-team attack vectors & defenses
 ├── docker-compose.yml           # Unified full-stack Docker orchestration
+├── LICENSE                      # Official Open-Source MIT License
 └── README.md                    # Project documentation & reference
 ```
 
