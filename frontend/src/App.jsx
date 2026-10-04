@@ -22,6 +22,7 @@ import BookingsPage from './pages/BookingsPage';
 import PricingPage from './pages/PricingPage';
 import EmergencyPage from './pages/EmergencyPage';
 import AboutPage from './pages/AboutPage';
+import PlanMyTripPage from './pages/PlanMyTripPage';
 
 import { createTripPlan, toggleChecklistItem } from './services/api';
 import {
@@ -167,10 +168,26 @@ export default function App() {
             <AboutPage />
           )}
 
+          {currentPage === 'custom-plan' && (
+            <PlanMyTripPage
+              onPlanCreated={(plan) => {
+                setActiveTrip(plan);
+                setCurrentDestination(plan.destination);
+                setActiveTab("safety");
+                setCurrentPage("home");
+                setTimeout(() => {
+                  document.getElementById("active-plan-section")?.scrollIntoView({ behavior: "smooth" });
+                }, 100);
+              }}
+              onBackToPlanner={() => handleNavigate('home')}
+            />
+          )}
+
           {currentPage === 'home' && (
             <div className="container">
               {/* Hero Section matching Reference Design */}
               <HeroSection
+                onPlanCustomClick={() => handleNavigate('custom-plan')}
                 onExploreClick={() => {
                   document.getElementById("planner-search-section")?.scrollIntoView({ behavior: "smooth" });
                 }}

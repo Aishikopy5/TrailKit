@@ -1,9 +1,10 @@
 import React from 'react';
-import { Send, ShieldCheck, Cpu, HardDrive } from 'lucide-react';
+import { Send, ShieldCheck, Cpu, HardDrive, Sparkles } from 'lucide-react';
 
 export default function Navbar({ currentPage = 'home', onNavigate = () => {}, isFallback }) {
   const navItems = [
-    { id: 'home', label: 'Planner' },
+    { id: 'home', label: 'Home' },
+    { id: 'custom-plan', label: 'Plan My Own Trip', highlight: true },
     { id: 'packages', label: 'Trail Packages' },
     { id: 'destinations', label: 'Altitude Atlas' },
     { id: 'bookings', label: 'My Expeditions' },
@@ -69,6 +70,36 @@ export default function Navbar({ currentPage = 'home', onNavigate = () => {}, is
         <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
           {navItems.map(item => {
             const isActive = currentPage === item.id;
+
+            if (item.highlight) {
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onNavigate(item.id)}
+                  style={{
+                    background: isActive ? '#f0f9ff' : '#ffffff',
+                    color: '#0284c7',
+                    border: '1px solid rgba(255, 255, 255, 0.9)',
+                    padding: '6px 14px',
+                    borderRadius: '9999px',
+                    fontSize: '0.82rem',
+                    fontWeight: 900,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    boxShadow: '0 2px 10px rgba(0, 0, 0, 0.15)',
+                    transition: 'all 0.2s',
+                    transform: isActive ? 'scale(1.04)' : 'none'
+                  }}
+                >
+                  <Sparkles size={13} color="#0284c7" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            }
+
             return (
               <button
                 key={item.id}

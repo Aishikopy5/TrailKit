@@ -1,7 +1,7 @@
 import React from 'react';
 import { Send, ShieldCheck, Compass, Sparkles } from 'lucide-react';
 
-export default function HeroSection({ onExploreClick, onSafetyClick }) {
+export default function HeroSection({ onPlanCustomClick, onExploreClick, onSafetyClick }) {
   return (
     <div style={{
       padding: '48px 0 32px 0',
@@ -73,10 +73,10 @@ export default function HeroSection({ onExploreClick, onSafetyClick }) {
         </p>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <button
             type="button"
-            onClick={onExploreClick}
+            onClick={onPlanCustomClick}
             style={{
               background: '#ffffff',
               color: '#0284c7',
@@ -84,7 +84,7 @@ export default function HeroSection({ onExploreClick, onSafetyClick }) {
               padding: '14px 28px',
               borderRadius: '9999px',
               fontSize: '0.95rem',
-              fontWeight: 700,
+              fontWeight: 800,
               display: 'inline-flex',
               alignItems: 'center',
               gap: '10px',
@@ -95,8 +95,29 @@ export default function HeroSection({ onExploreClick, onSafetyClick }) {
             onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
             onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
           >
-            <span>Plan Expedition</span>
+            <span>Plan My Own Trip</span>
             <Send size={16} />
+          </button>
+
+          <button
+            type="button"
+            onClick={onExploreClick}
+            style={{
+              background: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(10px)',
+              color: '#ffffff',
+              border: '1px solid rgba(255, 255, 255, 0.4)',
+              padding: '14px 22px',
+              borderRadius: '9999px',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.3)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'}
+          >
+            Quick Search
           </button>
 
           <button
