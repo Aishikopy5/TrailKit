@@ -169,8 +169,8 @@ Run the entire full-stack application (FastAPI + React Nginx) with a single comm
 
 ```bash
 # Clone the repository
-git clone https://github.com/<YOUR-USERNAME>/trailkit.git
-cd trailkit
+git clone https://github.com/Aishikopy5/TrailKit.git
+cd TrailKit
 
 # Copy environment variables
 cp .env.example .env

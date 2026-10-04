@@ -32,8 +32,8 @@ The simplest, zero-dependency method to deploy TrailKit is via Docker Compose on
 
 ### 2. Clone Repository & Setup Environment
 ```bash
-git clone https://github.com/your-username/HF26_KLY.git trailkit
-cd trailkit
+git clone https://github.com/Aishikopy5/TrailKit.git
+cd TrailKit
 
 # Copy environment template
 cp .env.example .env
