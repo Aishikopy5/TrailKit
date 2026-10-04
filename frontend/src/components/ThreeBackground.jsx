@@ -8,138 +8,185 @@ export default function ThreeBackground({ destination = "Leh, Ladakh" }) {
     const container = containerRef.current;
     if (!container) return;
 
-    // Detect environment profile based on searched destination
-    const dest = destination.toLowerCase();
-    let envType = "himalayan"; // default alpine peaks
-    if (/goa|kerala|beach|coast|sea|island|andaman|bali/i.test(dest)) {
-      envType = "coastal";
-    } else if (/manali|shimla|kasol|forest|valley|munnar|kashmir|dharamsala/i.test(dest)) {
-      envType = "valley";
-    } else if (/desert|rajasthan|jaipur|jaisalmer/i.test(dest)) {
-      envType = "desert";
-    }
+    // Detect environment type
+    const dest = (destination || "").toLowerCase();
+    let isCoastal = /goa|kerala|beach|coast|sea|island/i.test(dest);
+    let isValley = /manali|shimla|kasol|valley|forest|munnar/i.test(dest);
 
-    // 1. Scene, Camera, Renderer
+    // 1. Scene & Sky Camera
     const scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(
-      envType === "coastal" ? 0x071e33 : envType === "valley" ? 0x052e16 : 0x050c18,
-      0.018
-    );
+    scene.fog = new THREE.FogExp2(0xe0f2fe, 0.012);
 
     const camera = new THREE.PerspectiveCamera(
-      60,
+      55,
       window.innerWidth / window.innerHeight,
       0.1,
       1000
     );
-    camera.position.set(0, 15, 45);
-    camera.lookAt(0, 5, 0);
+    camera.position.set(0, 18, 52);
+    camera.lookAt(0, 8, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
-    // 2. Dynamic 3D Terrain Plane
-    const width = 120;
-    const height = 120;
-    const widthSegments = 65;
-    const heightSegments = 65;
-    const geometry = new THREE.PlaneGeometry(width, height, widthSegments, heightSegments);
-    geometry.rotateX(-Math.PI / 2);
+    // 2. Low-Poly Mountain Range (Inspired by the white geometric 3D landmarks in reference)
+    const mountainGeo = new THREE.PlaneGeometry(160, 90, 48, 32);
+    mountainGeo.rotateX(-Math.PI / 2);
+    const mPos = mountainGeo.attributes.position;
 
-    const pos = geometry.attributes.position;
-
-    // Apply procedural terrain height based on destination type
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i);
-      const z = pos.getZ(i);
+    for (let i = 0; i < mPos.count; i++) {
+      const x = mPos.getX(i);
+      const z = mPos.getZ(i);
       let y = 0;
 
-      if (envType === "himalayan") {
-        // Jagged dramatic peaks with sharp ridges
-        const d = Math.sqrt(x * x + z * z);
-        y = Math.sin(x * 0.12) * Math.cos(z * 0.12) * 9;
-        y += Math.sin(x * 0.25 + z * 0.2) * 5;
-        y += Math.sin(x * 0.5) * 2;
-        // Valley trail down the center
-        if (Math.abs(x) < 14) {
-          y *= 0.3;
-        }
-      } else if (envType === "coastal") {
-        // Rolling ocean swell waves
-        y = Math.sin(x * 0.15 + z * 0.1) * 3 + Math.cos(x * 0.08 - z * 0.12) * 2;
-      } else if (envType === "valley") {
-        // Rolling alpine forest hills
-        y = Math.sin(x * 0.08) * Math.cos(z * 0.08) * 6 + Math.sin(z * 0.18) * 3;
-        if (Math.abs(x) < 18) y *= 0.4;
+      if (isCoastal) {
+        // Soft rolling coastal waves with white foam crests
+        y = Math.sin(x * 0.12) * 2.5 + Math.cos(z * 0.15) * 2;
+      } else if (isValley) {
+        // Pine valley ridges
+        y = Math.sin(x * 0.08) * Math.cos(z * 0.08) * 7 + Math.sin(x * 0.2) * 3;
+        if (Math.abs(x) < 22) y *= 0.3; // center trail
       } else {
-        // Desert rolling dunes
-        y = Math.sin(x * 0.07 + z * 0.05) * 5 + Math.cos(x * 0.14) * 2.5;
+        // High Alpine jagged peaks (White low-poly mountains)
+        const dist = Math.abs(x);
+        y = Math.sin(x * 0.1) * Math.cos(z * 0.12) * 11;
+        y += Math.sin(x * 0.25 + z * 0.18) * 6;
+        if (z < -10) y += 6; // background peaks higher
+        if (dist < 18) y *= 0.25; // pass through middle
       }
-
-      pos.setY(i, y);
+      mPos.setY(i, y);
     }
-    geometry.computeVertexNormals();
+    mountainGeo.computeVertexNormals();
 
-    // Material 1: Wireframe topography lines
-    const wireColor = envType === "coastal" ? 0x06b6d4 : envType === "valley" ? 0x10b981 : 0x38bdf8;
-    const wireMaterial = new THREE.MeshBasicMaterial({
-      color: wireColor,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.28,
-    });
-    const wireMesh = new THREE.Mesh(geometry, wireMaterial);
-    scene.add(wireMesh);
-
-    // Material 2: Shaded mountain body with soft gradient
-    const solidColor = envType === "coastal" ? 0x021d38 : envType === "valley" ? 0x062817 : 0x0b172a;
-    const solidMaterial = new THREE.MeshStandardMaterial({
-      color: solidColor,
-      roughness: 0.85,
-      metalness: 0.15,
+    // Pristine White / Ice-Cyan Low Poly Mountain Material
+    const mountainMat = new THREE.MeshStandardMaterial({
+      color: isCoastal ? 0xbae6fd : 0xf8fafc,
+      roughness: 0.6,
+      metalness: 0.1,
       flatShading: true,
       transparent: true,
-      opacity: 0.82,
+      opacity: 0.72,
     });
-    const solidMesh = new THREE.Mesh(geometry, solidMaterial);
-    solidMesh.position.y = -0.05;
-    scene.add(solidMesh);
+    const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
+    mountainMesh.position.set(0, -6, -20);
+    scene.add(mountainMesh);
 
-    // 3. Floating 3D Atmospheric Particles (Snow mist, Fireflies, or Ocean spray)
-    const particleCount = 450;
-    const particleGeo = new THREE.BufferGeometry();
-    const particlePositions = new Float32Array(particleCount * 3);
-
-    for (let i = 0; i < particleCount * 3; i += 3) {
-      particlePositions[i] = (Math.random() - 0.5) * 110;
-      particlePositions[i + 1] = Math.random() * 35;
-      particlePositions[i + 2] = (Math.random() - 0.5) * 110;
-    }
-    particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-
-    const particleMaterial = new THREE.PointsMaterial({
-      color: envType === "coastal" ? 0x38bdf8 : envType === "valley" ? 0x34d399 : 0xe0f2fe,
-      size: 0.7,
+    // Cyan wireframe contour accent overlay
+    const wireMat = new THREE.MeshBasicMaterial({
+      color: 0x38bdf8,
+      wireframe: true,
       transparent: true,
-      opacity: 0.65,
-      blending: THREE.AdditiveBlending,
+      opacity: 0.22,
     });
-    const particleSystem = new THREE.Points(particleGeo, particleMaterial);
-    scene.add(particleSystem);
+    const wireMesh = new THREE.Mesh(mountainGeo, wireMat);
+    wireMesh.position.set(0, -5.9, -20);
+    scene.add(wireMesh);
 
-    // 4. Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    // 3. 3D Low-Poly Paper Airplane (Directly inspired by reference hero!)
+    const planeGroup = new THREE.Group();
+    const planeMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.3,
+      metalness: 0.2,
+      flatShading: true,
+      side: THREE.DoubleSide,
+    });
+
+    // Create origami paper plane geometry
+    const planeGeo = new THREE.BufferGeometry();
+    const planeVertices = new Float32Array([
+      // Left Wing
+      0, 0, 4,
+      -3.2, 0.4, -2.5,
+      0, -0.6, -2,
+
+      // Right Wing
+      0, 0, 4,
+      0, -0.6, -2,
+      3.2, 0.4, -2.5,
+
+      // Center Keel / Fuselage Left
+      0, 0, 4,
+      0, -1.2, -1.8,
+      -0.6, -0.4, -2,
+
+      // Center Keel / Fuselage Right
+      0, 0, 4,
+      0.6, -0.4, -2,
+      0, -1.2, -1.8,
+    ]);
+    planeGeo.setAttribute('position', new THREE.BufferAttribute(planeVertices, 3));
+    planeGeo.computeVertexNormals();
+
+    const airplaneMesh = new THREE.Mesh(planeGeo, planeMat);
+    planeGroup.add(airplaneMesh);
+    planeGroup.scale.set(1.4, 1.4, 1.4);
+    planeGroup.position.set(12, 16, 10);
+    scene.add(planeGroup);
+
+    // Dashed flight loop curve (Inspired by dashed flight path in image)
+    const curvePoints = [];
+    for (let t = 0; t <= Math.PI * 2; t += 0.1) {
+      const px = Math.cos(t) * 14 + 10;
+      const py = Math.sin(t * 2) * 3 + 15;
+      const pz = Math.sin(t) * 10 - 2;
+      curvePoints.push(new THREE.Vector3(px, py, pz));
+    }
+    const curveGeo = new THREE.BufferGeometry().setFromPoints(curvePoints);
+    const curveMat = new THREE.LineDashedMaterial({
+      color: 0x38bdf8,
+      dashSize: 0.8,
+      gapSize: 0.5,
+      transparent: true,
+      opacity: 0.45,
+    });
+    const flightPathLine = new THREE.Line(curveGeo, curveMat);
+    flightPathLine.computeLineDistances();
+    scene.add(flightPathLine);
+
+    // 4. Floating 3D Geometric Clouds / Sparkles
+    const cloudCount = 12;
+    const cloudGroup = new THREE.Group();
+    const cloudGeo = new THREE.DodecahedronGeometry(2.5, 1);
+    const cloudMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.9,
+      flatShading: true,
+      transparent: true,
+      opacity: 0.55,
+    });
+
+    for (let c = 0; c < cloudCount; c++) {
+      const cloud = new THREE.Mesh(cloudGeo, cloudMat);
+      cloud.position.set(
+        (Math.random() - 0.5) * 100,
+        Math.random() * 12 + 10,
+        (Math.random() - 0.5) * 60 - 10
+      );
+      const s = Math.random() * 1.5 + 0.8;
+      cloud.scale.set(s * 1.8, s * 0.9, s * 1.2);
+      cloudGroup.add(cloud);
+    }
+    scene.add(cloudGroup);
+
+    // 5. Ambient & Directional Sun Lighting
+    const ambientLight = new THREE.AmbientLight(0xe0f2fe, 1.2);
     scene.add(ambientLight);
 
-    const dirLightColor = envType === "coastal" ? 0xf59e0b : envType === "valley" ? 0x34d399 : 0x38bdf8;
-    const dirLight = new THREE.DirectionalLight(dirLightColor, 1.8);
-    dirLight.position.set(20, 40, 20);
-    scene.add(dirLight);
+    const sunLight = new THREE.DirectionalLight(0xffffff, 1.8);
+    sunLight.position.set(30, 45, 25);
+    scene.add(sunLight);
 
-    // 5. Mouse Parallax & Animation Loop
+    const skyFillLight = new THREE.DirectionalLight(0x0284c7, 0.8);
+    skyFillLight.position.set(-25, 20, -10);
+    scene.add(skyFillLight);
+
+    // 6. Interactive Mouse Parallax & Flight Loop Animation
     let mouseX = 0;
     let mouseY = 0;
     let targetX = 0;
@@ -158,47 +205,36 @@ export default function ThreeBackground({ destination = "Leh, Ladakh" }) {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = (performance.now() - startTime) * 0.001;
 
-      // Smooth camera lerp with mouse movement
-      targetX += (mouseX * 8 - targetX) * 0.05;
-      targetY += (-mouseY * 4 - targetY) * 0.05;
+      // Mouse camera parallax
+      targetX += (mouseX * 6 - targetX) * 0.04;
+      targetY += (-mouseY * 3 - targetY) * 0.04;
 
       camera.position.x = targetX;
-      camera.position.y = 15 + targetY;
-      camera.lookAt(0, 4, -10);
+      camera.position.y = 18 + targetY;
+      camera.lookAt(0, 7, -10);
 
-      // Subtle terrain undulation / wave drift
-      if (envType === "coastal") {
-        const positions = geometry.attributes.position;
-        for (let i = 0; i < positions.count; i++) {
-          const x = positions.getX(i);
-          const z = positions.getZ(i);
-          const wave = Math.sin(x * 0.15 + elapsedTime * 1.5) * 1.8 + Math.cos(z * 0.1 + elapsedTime) * 1.5;
-          positions.setY(i, wave);
-        }
-        geometry.computeVertexNormals();
-        geometry.attributes.position.needsUpdate = true;
-      }
+      // Airplane flight motion along graceful curve
+      const angle = elapsedTime * 0.45;
+      const ax = Math.cos(angle) * 14 + 10;
+      const ay = Math.sin(angle * 2) * 2.8 + 15;
+      const az = Math.sin(angle) * 10 - 2;
 
-      // Slow terrain drift
-      wireMesh.position.z = (elapsedTime * 1.8) % (height / 2) - height / 4;
-      solidMesh.position.z = wireMesh.position.z;
+      planeGroup.position.set(ax, ay, az);
+      planeGroup.rotation.y = -angle + Math.PI / 2;
+      planeGroup.rotation.z = Math.sin(angle * 2) * 0.35; // banking turn
+      planeGroup.rotation.x = Math.cos(angle * 2) * 0.15; // pitch
 
-      // Particle floating animation
-      const partPos = particleGeo.attributes.position;
-      for (let i = 1; i < particleCount * 3; i += 3) {
-        partPos.array[i] -= 0.04;
-        if (partPos.array[i] < 0) {
-          partPos.array[i] = 35;
-        }
-      }
-      particleGeo.attributes.position.needsUpdate = true;
+      // Slow drift of clouds
+      cloudGroup.children.forEach((cloud, i) => {
+        cloud.position.x += 0.03 * (i % 2 === 0 ? 1 : 0.8);
+        if (cloud.position.x > 60) cloud.position.x = -60;
+      });
 
       renderer.render(scene, camera);
     };
 
     animate();
 
-    // 6. Responsive Resize
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -211,11 +247,15 @@ export default function ThreeBackground({ destination = "Leh, Ladakh" }) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
-      geometry.dispose();
-      wireMaterial.dispose();
-      solidMaterial.dispose();
-      particleGeo.dispose();
-      particleMaterial.dispose();
+      mountainGeo.dispose();
+      mountainMat.dispose();
+      wireMat.dispose();
+      planeGeo.dispose();
+      planeMat.dispose();
+      cloudGeo.dispose();
+      cloudMat.dispose();
+      curveGeo.dispose();
+      curveMat.dispose();
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement);
       }

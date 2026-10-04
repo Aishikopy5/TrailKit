@@ -23,14 +23,12 @@ export default function DestinationHUD({ destination, altitudeM = 3500, isHighAl
 
   return (
     <div style={{
-      background: 'rgba(18, 24, 38, 0.75)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid rgba(255, 255, 255, 0.1)',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
-      borderRadius: '16px',
-      padding: '16px 24px',
-      marginBottom: '24px',
+      background: '#ffffff',
+      border: '1px solid #e0f2fe',
+      boxShadow: '0 12px 35px rgba(2, 132, 199, 0.08), 0 2px 8px rgba(0, 0, 0, 0.03)',
+      borderRadius: '20px',
+      padding: '18px 26px',
+      marginBottom: '28px',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
@@ -60,7 +58,7 @@ export default function DestinationHUD({ destination, altitudeM = 3500, isHighAl
               <Sparkles size={10} /> 3D Live Terrain Synced
             </span>
           </div>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#f8fafc', marginTop: '2px' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', marginTop: '2px' }}>
             {destination || "Wilderness Terrain"}
           </h3>
         </div>
@@ -69,10 +67,10 @@ export default function DestinationHUD({ destination, altitudeM = 3500, isHighAl
       {/* Telemetry Stats Bar */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Mountain size={18} color="#38bdf8" />
+          <Mountain size={18} color="#0284c7" />
           <div>
             <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Elevation</p>
-            <p style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: isHighAltitude ? '#fbbf24' : '#f8fafc' }}>
+            <p style={{ fontSize: '0.95rem', fontWeight: 700, fontFamily: 'var(--font-mono)', color: isHighAltitude ? '#d97706' : '#0f172a' }}>
               {altitudeM ? `${altitudeM.toLocaleString()}m ASL` : '2,050m ASL'}
             </p>
           </div>

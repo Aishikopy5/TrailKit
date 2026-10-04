@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
 import Navbar from './components/Navbar';
+import HeroSection from './components/HeroSection';
 import TripForm from './components/TripForm';
+import FeatureHighlights from './components/FeatureHighlights';
+import PopularPackages from './components/PopularPackages';
+import HowItWorks from './components/HowItWorks';
+import MetricsFooter from './components/MetricsFooter';
 import SafetyCardView from './components/SafetyCardView';
 import ItineraryView from './components/ItineraryView';
 import PackingListView from './components/PackingListView';
@@ -14,7 +19,6 @@ import {
   Calendar,
   Users,
   ShieldCheck,
-  MapPin,
   RefreshCw,
   Sparkles,
   Luggage,
@@ -37,11 +41,34 @@ export default function App() {
       setActiveTrip(trip);
       setCurrentDestination(trip.destination);
       setActiveTab("safety");
+      // Smooth scroll to the plan details
+      setTimeout(() => {
+        document.getElementById("active-plan-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
     } catch (err) {
       setErrorMessage(err.message || "Failed to generate plan. Please try again.");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSelectPackage = (preset) => {
+    setCurrentDestination(preset.destination);
+    const today = new Date().toISOString().split('T')[0];
+    const end = new Date(Date.now() + (preset.durationDays - 1) * 86400000).toISOString().split('T')[0];
+
+    const payload = {
+      destination: preset.destination,
+      start_date: today,
+      end_date: end,
+      budget_currency: preset.currency,
+      max_budget: preset.budget,
+      activity_style: preset.style,
+      special_notes: "Loaded from Popular Expeditions package",
+      travelers: preset.travelers,
+    };
+
+    handleCreateTrip(payload);
   };
 
   const handleToggleItem = async (itemId) => {
@@ -64,69 +91,86 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative', overflowX: 'hidden' }}>
-      {/* 3D WebGL Procedural Background Synced to Current Searched Place */}
+      {/* 3D WebGL Low-Poly Mountain & Paper Airplane Scene */}
       <ThreeBackground destination={displayDestination} />
 
       {/* Main Glassmorphism Content Area */}
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
         <Navbar isFallback={activeTrip?.is_fallback} />
 
-        <main style={{ flex: 1, padding: '28px 0' }}>
+        <main style={{ flex: 1, paddingBottom: '48px' }}>
           <div className="container">
-            {/* Live 3D Destination Telemetry HUD */}
-            <DestinationHUD
-              destination={displayDestination}
-              altitudeM={estimatedAltitude}
-              isHighAltitude={isHighAltitude}
+            {/* Hero Section matching Reference Design */}
+            <HeroSection
+              onExploreClick={() => {
+                document.getElementById("planner-search-section")?.scrollIntoView({ behavior: "smooth" });
+              }}
+              onSafetyClick={() => {
+                document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" });
+              }}
             />
 
+            {/* Horizontal Floating Expedition Search Bar */}
+            <div style={{ marginTop: '16px', marginBottom: '24px' }}>
+              <TripForm
+                onSubmit={handleCreateTrip}
+                isLoading={isLoading}
+                onDestinationChange={(dest) => setCurrentDestination(dest)}
+              />
+            </div>
+
+            {/* 4 Embossed 3D Feature Cards */}
+            <FeatureHighlights />
+
+            {/* Error Banner */}
             {errorMessage && (
               <div style={{
-                background: 'rgba(244, 63, 94, 0.2)',
-                backdropFilter: 'blur(16px)',
-                border: '1px solid rgba(244, 63, 94, 0.4)',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                color: '#fb7185',
-                marginBottom: '24px',
+                background: '#fff1f2',
+                border: '1px solid #fecdd3',
+                borderRadius: '16px',
+                padding: '16px 20px',
+                color: '#e11d48',
+                marginBottom: '28px',
                 fontSize: '0.9rem',
-                boxShadow: '0 8px 24px rgba(244, 63, 94, 0.15)'
+                fontWeight: 600,
+                boxShadow: '0 4px 15px rgba(244, 63, 94, 0.1)',
               }}>
                 {errorMessage}
               </div>
             )}
 
-            {!activeTrip ? (
-              <div style={{ maxWidth: '880px', margin: '0 auto' }}>
-                <TripForm
-                  onSubmit={handleCreateTrip}
-                  isLoading={isLoading}
-                  onDestinationChange={(dest) => setCurrentDestination(dest)}
+            {/* Active Expedition Plan Section */}
+            {activeTrip && (
+              <div id="active-plan-section" style={{ margin: '36px 0', animation: 'fadeIn 0.4s ease' }}>
+                {/* 3D Telemetry HUD */}
+                <DestinationHUD
+                  destination={activeTrip.destination}
+                  altitudeM={activeTrip.safety_card?.max_altitude_m}
+                  isHighAltitude={activeTrip.safety_card?.altitude_warning}
                 />
-              </div>
-            ) : (
-              <div>
-                {/* Trip Header Glass Banner */}
-                <div className="card" style={{
-                  marginBottom: '24px',
-                  background: 'linear-gradient(135deg, rgba(18, 24, 38, 0.85) 0%, rgba(26, 35, 52, 0.85) 100%)',
-                }}>
+
+                {/* Plan Header Card */}
+                <div className="card" style={{ marginBottom: '24px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                        <span className="badge badge-emerald">Plan v{activeTrip.version}</span>
+                        <span className="badge badge-emerald">Verified Plan v{activeTrip.version}</span>
                         <span className="badge badge-cyan">{activeTrip.generation_source}</span>
                         {activeTrip.safety_card.altitude_warning && (
-                          <span className="badge badge-amber">High-Altitude Acclimatization Verified</span>
+                          <span className="badge badge-amber">Altitude Acclimatization Verified</span>
                         )}
                       </div>
-                      <h2 style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em' }}>{activeTrip.destination}</h2>
-                      <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '16px', marginTop: '6px', flexWrap: 'wrap' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Calendar size={15} color="var(--accent-emerald)" /> {activeTrip.start_date} to {activeTrip.end_date} ({activeTrip.duration_days} Days)
+
+                      <h2 style={{ fontSize: '2rem', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.02em' }}>
+                        {activeTrip.destination}
+                      </h2>
+
+                      <p style={{ color: '#64748b', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '18px', marginTop: '6px', flexWrap: 'wrap' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Calendar size={16} color="#0284c7" /> {activeTrip.start_date} to {activeTrip.end_date} ({activeTrip.duration_days} Days)
                         </span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                          <Users size={15} color="var(--accent-cyan)" /> {activeTrip.travelers_count} Traveler(s)
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Users size={16} color="#0284c7" /> {activeTrip.travelers_count} Traveler(s)
                         </span>
                       </p>
                     </div>
@@ -137,17 +181,17 @@ export default function App() {
                       onClick={() => setActiveTrip(null)}
                       style={{ fontSize: '0.85rem' }}
                     >
-                      <RefreshCw size={15} /> Explore Another Destination
+                      <RefreshCw size={15} /> Close Plan
                     </button>
                   </div>
 
-                  <div style={{ marginTop: '20px' }}>
+                  <div style={{ marginTop: '24px' }}>
                     <VoiceBriefing tripId={activeTrip.id} destination={activeTrip.destination} />
                   </div>
                 </div>
 
-                {/* Navigation Tabs */}
-                <div className="tabs-nav" style={{ backdropFilter: 'blur(12px)', padding: '4px', borderRadius: '12px' }}>
+                {/* Interactive Navigation Tabs */}
+                <div className="tabs-nav">
                   <button
                     type="button"
                     className={`tab-btn ${activeTab === 'safety' ? 'active' : ''}`}
@@ -185,7 +229,7 @@ export default function App() {
                   </button>
                 </div>
 
-                {/* Tab Contents */}
+                {/* Tab Views */}
                 <div>
                   {activeTab === 'safety' && (
                     <SafetyCardView safetyCard={activeTrip.safety_card} />
@@ -207,31 +251,42 @@ export default function App() {
                     />
                   )}
                   {activeTab === 'chat' && (
-                    <div style={{ maxWidth: '880px', margin: '0 auto' }}>
+                    <div style={{ maxWidth: '920px', margin: '0 auto' }}>
                       <ChatAssistant trip={activeTrip} onTripUpdated={handleTripUpdated} />
                     </div>
                   )}
                 </div>
               </div>
             )}
+
+            {/* Popular Packages Showcase */}
+            <div id="packages-section">
+              <PopularPackages onSelectPackage={handleSelectPackage} />
+            </div>
+
+            {/* 4-Step Process Bar ("HOW TO BOOK" in reference) */}
+            <div id="how-it-works">
+              <HowItWorks />
+            </div>
+
+            {/* Trust Metrics & Testimonial Bar */}
+            <MetricsFooter />
           </div>
         </main>
 
         <footer style={{
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          padding: '24px 0',
-          marginTop: 'auto',
-          background: 'rgba(11, 15, 23, 0.85)',
-          backdropFilter: 'blur(20px)'
+          borderTop: '1px solid #e0f2fe',
+          padding: '28px 0',
+          background: '#ffffff',
         }}>
-          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div className="container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
             <div>
-              <p style={{ fontSize: '0.85rem', fontWeight: 600 }}>TrailKit — Open-Source AI Expedition Planner</p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Built with Google Gemma 2 & Tinker Fine-Tuning. Deterministic Code Safety & Real-time 3D Biome Sync.
+              <p style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>TrailKit — Open-Weight AI Expedition Planner</p>
+              <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                Built with Google Gemma 2 & Tinker Fine-Tuning. Deterministic Code-Enforced Safety.
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '14px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: '#64748b', fontWeight: 600 }}>
               <span>#hf26challenge</span>
               <span>#devchallenge</span>
               <span>#weekendchallenge</span>

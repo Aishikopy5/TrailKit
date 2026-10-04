@@ -1,72 +1,57 @@
 import React, { useState } from 'react';
-import { MapPin, Calendar, Users, DollarSign, Plus, Trash2, AlertCircle, Mountain, Sparkles } from 'lucide-react';
+import {
+  MapPin,
+  Calendar,
+  Users,
+  Compass,
+  Mountain,
+  Waves,
+  Trees,
+  Search,
+  ArrowRightLeft,
+  ChevronDown,
+  Sparkles,
+  AlertCircle,
+  Plus,
+  Trash2,
+  ShieldCheck,
+} from 'lucide-react';
 
-const PRESETS = [
-  {
-    name: "🏔️ Leh Ladakh Family Expedition",
-    destination: "Leh, Ladakh",
-    durationDays: 4,
-    budget: 35000,
-    currency: "INR",
-    style: "trekking",
-    travelers: [
-      { name: "Aarav", age: 34, has_health_conditions: true, condition_notes: "Mild asthma" },
-      { name: "Priya", age: 31, has_health_conditions: false, condition_notes: "" },
-      { name: "Ananya", age: 2, has_health_conditions: false, condition_notes: "" },
-    ],
-  },
-  {
-    name: "🌲 Manali & Solang Valley Trail",
-    destination: "Manali, Himachal Pradesh",
-    durationDays: 3,
-    budget: 20000,
-    currency: "INR",
-    style: "moderate",
-    travelers: [
-      { name: "Rohan", age: 28, has_health_conditions: false, condition_notes: "" },
-      { name: "Vikram", age: 27, has_health_conditions: false, condition_notes: "" },
-    ],
-  },
-  {
-    name: "🌊 Goa Coastal Trail & Heritage",
-    destination: "Goa, India",
-    durationDays: 3,
-    budget: 25000,
-    currency: "INR",
-    style: "leisure",
-    travelers: [
-      { name: "Aishi", age: 26, has_health_conditions: false, condition_notes: "" },
-    ],
-  },
+const TABS = [
+  { id: "himalayan", label: "High-Altitude Treks", icon: Mountain, defaultDest: "Leh, Ladakh", budget: 35000 },
+  { id: "valley", label: "Pine Valleys", icon: Trees, defaultDest: "Manali, Himachal Pradesh", budget: 20000 },
+  { id: "coastal", label: "Coastal Trails", icon: Waves, defaultDest: "Goa, India", budget: 25000 },
+  { id: "custom", label: "Custom Wilderness", icon: Compass, defaultDest: "Spiti Valley, Himachal", budget: 40000 },
 ];
 
 export default function TripForm({ onSubmit, isLoading, onDestinationChange }) {
   const today = new Date().toISOString().split('T')[0];
   const defaultEnd = new Date(Date.now() + 3 * 86400000).toISOString().split('T')[0];
 
+  const [activeCategory, setActiveCategory] = useState("himalayan");
+  const [origin, setOrigin] = useState("Delhi, India");
   const [destination, setDestination] = useState("Leh, Ladakh");
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(defaultEnd);
   const [currency, setCurrency] = useState("INR");
-  const [maxBudget, setMaxBudget] = useState(30000);
+  const [maxBudget, setMaxBudget] = useState(35000);
   const [activityStyle, setActivityStyle] = useState("trekking");
-  const [specialNotes, setSpecialNotes] = useState("");
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [travelers, setTravelers] = useState([
-    { id: "t1", name: "Traveler 1", age: 30, has_health_conditions: false, condition_notes: "" },
+    { id: "t1", name: "Adult Explorer", age: 32, has_health_conditions: true, condition_notes: "Mild asthma" },
     { id: "t2", name: "Toddler", age: 2, has_health_conditions: false, condition_notes: "" },
   ]);
   const [validationError, setValidationError] = useState("");
 
-  const handleApplyPreset = (preset) => {
-    setDestination(preset.destination);
-    if (onDestinationChange) onDestinationChange(preset.destination);
-    setActivityStyle(preset.style);
-    setMaxBudget(preset.budget);
-    setCurrency(preset.currency);
-    const end = new Date(Date.now() + (preset.durationDays - 1) * 86400000).toISOString().split('T')[0];
-    setEndDate(end);
-    setTravelers(preset.travelers.map((t, idx) => ({ ...t, id: `t_${idx}_${Date.now()}` })));
-    setValidationError("");
+  const handleTabClick = (tab) => {
+    setActiveCategory(tab.id);
+    setDestination(tab.defaultDest);
+    setMaxBudget(tab.budget);
+    if (onDestinationChange) onDestinationChange(tab.defaultDest);
+    if (tab.id === "himalayan") setActivityStyle("trekking");
+    else if (tab.id === "coastal") setActivityStyle("leisure");
+    else if (tab.id === "valley") setActivityStyle("moderate");
+    else setActivityStyle("adventure");
   };
 
   const addTraveler = () => {
@@ -86,11 +71,17 @@ export default function TripForm({ onSubmit, isLoading, onDestinationChange }) {
     setTravelers(travelers.map(t => t.id === id ? { ...t, [field]: value } : t));
   };
 
+  const handleSwap = () => {
+    const temp = origin;
+    setOrigin(destination);
+    setDestination(temp);
+    if (onDestinationChange) onDestinationChange(temp);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setValidationError("");
 
-    // Client side bounds validation (S21, L12)
     if (!destination.trim()) {
       setValidationError("Destination is required.");
       return;
@@ -108,10 +99,6 @@ export default function TripForm({ onSubmit, isLoading, onDestinationChange }) {
       setValidationError("Budget must be at least 100.");
       return;
     }
-    if (travelers.some(t => t.age < 0 || t.age > 120)) {
-      setValidationError("All traveler ages must be between 0 and 120.");
-      return;
-    }
 
     const payload = {
       destination: destination.trim(),
@@ -120,10 +107,10 @@ export default function TripForm({ onSubmit, isLoading, onDestinationChange }) {
       budget_currency: currency,
       max_budget: parseFloat(maxBudget),
       activity_style: activityStyle,
-      special_notes: specialNotes.trim(),
+      special_notes: `Origin: ${origin.trim()}`,
       travelers: travelers.map(({ name, age, has_health_conditions, condition_notes }) => ({
         name: name.trim() || "Traveler",
-        age: parseInt(age, 10),
+        age: parseInt(age, 10) || 25,
         has_health_conditions: Boolean(has_health_conditions),
         condition_notes: condition_notes ? condition_notes.trim() : "",
       })),
@@ -135,62 +122,132 @@ export default function TripForm({ onSubmit, isLoading, onDestinationChange }) {
   const isHighAltitude = /leh|ladakh|spiti|kaza|kedarnath|gulmarg|solang|rohtang/i.test(destination);
 
   return (
-    <div className="card">
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <div>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Plan Safe Expedition</h2>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            AI generates itinerary & gear; deterministic code guarantees altitude & medicine safety.
-          </p>
-        </div>
-      </div>
-
-      {/* Quick Presets for Hackathon Demo */}
-      <div style={{ marginBottom: '20px', padding: '14px', background: 'var(--bg-surface-elevated)', borderRadius: '8px' }}>
-        <p style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Sparkles size={14} color="#34d399" /> Fast Hackathon Presets ("Build for a Friend"):
-        </p>
-        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-          {PRESETS.map((p, i) => (
+    <div id="planner-search-section" style={{ position: 'relative', zIndex: 20 }}>
+      {/* 1. Category Tabs Floating Above Search Bar (Matching Reference) */}
+      <div style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        background: '#ffffff',
+        padding: '6px 8px',
+        borderRadius: '16px 16px 0 0',
+        boxShadow: '0 -4px 20px rgba(2, 132, 199, 0.08)',
+        border: '1px solid #e0f2fe',
+        borderBottom: 'none',
+        gap: '4px',
+        marginLeft: '20px',
+      }}>
+        {TABS.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeCategory === tab.id;
+          return (
             <button
-              key={i}
+              key={tab.id}
               type="button"
-              className="btn-secondary"
-              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-              onClick={() => handleApplyPreset(p)}
+              onClick={() => handleTabClick(tab)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 18px',
+                borderRadius: '12px',
+                border: 'none',
+                background: isActive ? 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)' : 'transparent',
+                color: isActive ? '#ffffff' : '#64748b',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+              }}
             >
-              {p.name}
+              <Icon size={16} color={isActive ? '#ffffff' : '#0284c7'} />
+              <span>{tab.label}</span>
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {validationError && (
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '12px',
-          background: 'rgba(244, 63, 94, 0.15)',
-          border: '1px solid rgba(244, 63, 94, 0.3)',
-          borderRadius: '8px',
-          color: '#fb7185',
-          fontSize: '0.85rem',
-          marginBottom: '20px'
-        }}>
-          <AlertCircle size={18} />
-          <span>{validationError}</span>
-        </div>
-      )}
+      {/* 2. Floating Main Search Bar Card (Directly from reference design!) */}
+      <div style={{
+        background: '#ffffff',
+        borderRadius: '24px',
+        padding: '24px 28px',
+        boxShadow: '0 20px 50px rgba(2, 132, 199, 0.15), 0 2px 10px rgba(0, 0, 0, 0.05)',
+        border: '1px solid #e0f2fe',
+      }}>
+        {validationError && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 14px',
+            background: 'rgba(244, 63, 94, 0.1)',
+            borderRadius: '8px',
+            color: '#e11d48',
+            fontSize: '0.85rem',
+            marginBottom: '16px',
+            fontWeight: 600,
+          }}>
+            <AlertCircle size={16} />
+            <span>{validationError}</span>
+          </div>
+        )}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px', marginBottom: '16px' }}>
-          {/* Destination */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
-              Destination {isHighAltitude && <span className="badge badge-amber" style={{ marginLeft: '6px' }}><Mountain size={12} /> High Altitude</span>}
-            </label>
-            <div style={{ position: 'relative' }}>
+        <form onSubmit={handleSubmit}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(180px, 1.2fr) auto minmax(200px, 1.4fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(140px, 1fr) auto',
+            gap: '12px',
+            alignItems: 'center',
+          }}>
+            {/* From Input */}
+            <div style={{ padding: '4px 8px' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '2px' }}>
+                From
+              </label>
+              <input
+                type="text"
+                value={origin}
+                onChange={(e) => setOrigin(e.target.value)}
+                style={{
+                  border: 'none',
+                  padding: '4px 0',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  background: 'transparent',
+                  width: '100%',
+                }}
+                placeholder="Origin City"
+              />
+            </div>
+
+            {/* Swap Button */}
+            <button
+              type="button"
+              onClick={handleSwap}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                background: '#f0f9ff',
+                border: '1px solid #e0f2fe',
+                color: '#0284c7',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'transform 0.2s',
+              }}
+              title="Swap places"
+            >
+              <ArrowRightLeft size={14} />
+            </button>
+
+            {/* To Input (Destination) */}
+            <div style={{ padding: '4px 8px', borderLeft: '1px solid #f1f5f9' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '2px' }}>
+                Destination {isHighAltitude && <span style={{ color: '#0284c7', textTransform: 'none', fontSize: '0.65rem' }}>· 3,500m</span>}
+              </label>
               <input
                 type="text"
                 value={destination}
@@ -198,190 +255,246 @@ export default function TripForm({ onSubmit, isLoading, onDestinationChange }) {
                   setDestination(e.target.value);
                   if (onDestinationChange) onDestinationChange(e.target.value);
                 }}
-                placeholder="e.g. Leh, Ladakh or Manali"
-                style={{ width: '100%', paddingLeft: '38px' }}
+                style={{
+                  border: 'none',
+                  padding: '4px 0',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  color: '#0f172a',
+                  background: 'transparent',
+                  width: '100%',
+                }}
+                placeholder="Destination Trail"
                 required
               />
-              <MapPin size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
             </div>
-          </div>
 
-          {/* Activity Style */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
-              Activity Style
-            </label>
-            <select
-              value={activityStyle}
-              onChange={(e) => setActivityStyle(e.target.value)}
-              style={{ width: '100%' }}
-            >
-              <option value="trekking">Trekking & Hiking</option>
-              <option value="moderate">Moderate Sightseeing & Nature</option>
-              <option value="adventure">High Adventure (River / Peak)</option>
-              <option value="leisure">Leisure & Cultural</option>
-            </select>
-          </div>
-
-          {/* Start Date */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
-              Start Date
-            </label>
-            <div style={{ position: 'relative' }}>
+            {/* Depart Date */}
+            <div style={{ padding: '4px 8px', borderLeft: '1px solid #f1f5f9' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '2px' }}>
+                Depart
+              </label>
               <input
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                style={{ width: '100%', paddingLeft: '38px' }}
+                style={{
+                  border: 'none',
+                  padding: '4px 0',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  background: 'transparent',
+                  width: '100%',
+                }}
                 required
               />
-              <Calendar size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
             </div>
-          </div>
 
-          {/* End Date */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
-              End Date
-            </label>
-            <div style={{ position: 'relative' }}>
+            {/* Return Date */}
+            <div style={{ padding: '4px 8px', borderLeft: '1px solid #f1f5f9' }}>
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '2px' }}>
+                Return
+              </label>
               <input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                style={{ width: '100%', paddingLeft: '38px' }}
-                required
-              />
-              <Calendar size={18} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '12px' }} />
-            </div>
-          </div>
-
-          {/* Budget & Currency */}
-          <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '6px', color: 'var(--text-secondary)' }}>
-              Total Budget Ceiling
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                style={{ width: '80px' }}
-              >
-                <option value="INR">INR (₹)</option>
-                <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-              </select>
-              <input
-                type="number"
-                min="100"
-                max="10000000"
-                value={maxBudget}
-                onChange={(e) => setMaxBudget(e.target.value)}
-                style={{ flex: 1 }}
-                required
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Travelers Section */}
-        <div style={{ marginTop: '24px', marginBottom: '24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <label style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Users size={18} color="var(--accent-emerald)" />
-              Expedition Travelers ({travelers.length})
-            </label>
-            <button
-              type="button"
-              onClick={addTraveler}
-              className="btn-secondary"
-              style={{ fontSize: '0.8rem', padding: '6px 12px' }}
-            >
-              <Plus size={14} /> Add Traveler
-            </button>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {travelers.map((t, idx) => (
-              <div
-                key={t.id}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(120px, 1fr) 90px minmax(140px, 1.5fr) auto',
-                  gap: '10px',
-                  alignItems: 'center',
-                  background: 'var(--bg-surface-elevated)',
-                  padding: '10px 14px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-subtle)',
+                  border: 'none',
+                  padding: '4px 0',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  color: '#0f172a',
+                  background: 'transparent',
+                  width: '100%',
                 }}
-              >
-                <input
-                  type="text"
-                  placeholder="Name"
-                  value={t.name}
-                  onChange={(e) => updateTraveler(t.id, 'name', e.target.value)}
-                />
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type="number"
-                    min="0"
-                    max="120"
-                    placeholder="Age"
-                    value={t.age}
-                    onChange={(e) => updateTraveler(t.id, 'age', e.target.value)}
-                  />
-                  {t.age < 3 ? (
-                    <span style={{ position: 'absolute', right: '8px', top: '10px', fontSize: '0.7rem', color: '#fbbf24', fontWeight: 700 }}>
-                      Toddler
-                    </span>
-                  ) : t.age < 12 ? (
-                    <span style={{ position: 'absolute', right: '8px', top: '10px', fontSize: '0.7rem', color: '#38bdf8', fontWeight: 700 }}>
-                      Child
-                    </span>
-                  ) : null}
-                </div>
-                <input
-                  type="text"
-                  placeholder="Health notes (e.g. asthma, allergies)"
-                  value={t.condition_notes}
-                  onChange={(e) => {
-                    updateTraveler(t.id, 'condition_notes', e.target.value);
-                    updateTraveler(t.id, 'has_health_conditions', Boolean(e.target.value.trim()));
-                  }}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeTraveler(t.id)}
-                  disabled={travelers.length <= 1}
-                  style={{
-                    color: travelers.length <= 1 ? 'var(--text-muted)' : 'var(--accent-rose)',
-                    padding: '8px',
-                    cursor: travelers.length <= 1 ? 'not-allowed' : 'pointer'
-                  }}
-                  title="Remove traveler"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
+                required
+              />
+            </div>
 
-        <button
-          type="submit"
-          className="btn-primary"
-          disabled={isLoading}
-          style={{ width: '100%', justifyContent: 'center', fontSize: '1rem', padding: '14px' }}
-        >
-          {isLoading ? (
-            <span>Generating & Validating Plan with Gemma AI...</span>
-          ) : (
-            <span>Generate & Validate Expedition Plan</span>
+            {/* Travelers Summary Selector */}
+            <div
+              onClick={() => setIsAdvancedOpen(!isAdvancedOpen)}
+              style={{
+                padding: '4px 8px',
+                borderLeft: '1px solid #f1f5f9',
+                cursor: 'pointer',
+              }}
+            >
+              <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '2px' }}>
+                Travelers
+              </label>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
+                  {travelers.length} {travelers.length === 1 ? 'Explorer' : 'Explorers'}
+                </span>
+                <ChevronDown size={14} color="#64748b" />
+              </div>
+            </div>
+
+            {/* Submit Button (Matching solid rounded blue Search button from image!) */}
+            <div>
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '16px',
+                  padding: '16px 28px',
+                  fontWeight: 800,
+                  fontSize: '0.95rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  boxShadow: '0 8px 20px rgba(2, 132, 199, 0.35)',
+                  transition: 'transform 0.15s, opacity 0.15s',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <Search size={18} />
+                <span>{isLoading ? "Validating..." : "Plan Trail"}</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Expandable Advanced Travelers Drawer */}
+          {isAdvancedOpen && (
+            <div style={{
+              marginTop: '20px',
+              paddingTop: '20px',
+              borderTop: '1px solid #e2e8f0',
+              animation: 'fadeIn 0.2s ease',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                <div>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#0f172a' }}>
+                    Expedition Travelers & Health Notes
+                  </h4>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                    Rule L4: Children & toddlers trigger pediatric thermal wear and high-altitude safety locks
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b' }}>Budget Ceiling:</span>
+                    <select
+                      value={currency}
+                      onChange={(e) => setCurrency(e.target.value)}
+                      style={{ padding: '6px 8px', fontSize: '0.8rem', borderRadius: '6px', background: '#f8fafc' }}
+                    >
+                      <option value="INR">INR (₹)</option>
+                      <option value="USD">USD ($)</option>
+                    </select>
+                    <input
+                      type="number"
+                      value={maxBudget}
+                      onChange={(e) => setMaxBudget(e.target.value)}
+                      style={{ width: '90px', padding: '6px 8px', fontSize: '0.8rem', borderRadius: '6px', background: '#f8fafc' }}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addTraveler}
+                    style={{
+                      background: '#f0f9ff',
+                      color: '#0284c7',
+                      border: '1px solid #bae6fd',
+                      padding: '6px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                    }}
+                  >
+                    <Plus size={14} /> Add Traveler
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {travelers.map((t) => (
+                  <div
+                    key={t.id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'minmax(140px, 1fr) 90px minmax(180px, 1.5fr) auto',
+                      gap: '10px',
+                      alignItems: 'center',
+                      background: '#f8fafc',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      border: '1px solid #e2e8f0',
+                    }}
+                  >
+                    <input
+                      type="text"
+                      placeholder="Name"
+                      value={t.name}
+                      onChange={(e) => updateTraveler(t.id, 'name', e.target.value)}
+                      style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: '6px' }}
+                    />
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        min="0"
+                        max="120"
+                        placeholder="Age"
+                        value={t.age}
+                        onChange={(e) => updateTraveler(t.id, 'age', e.target.value)}
+                        style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: '6px', width: '100%' }}
+                      />
+                      {t.age < 3 ? (
+                        <span style={{ position: 'absolute', right: '6px', top: '7px', fontSize: '0.65rem', color: '#f59e0b', fontWeight: 800 }}>
+                          Toddler
+                        </span>
+                      ) : t.age < 12 ? (
+                        <span style={{ position: 'absolute', right: '6px', top: '7px', fontSize: '0.65rem', color: '#0284c7', fontWeight: 800 }}>
+                          Child
+                        </span>
+                      ) : null}
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Health notes (e.g. asthma, allergies)"
+                      value={t.condition_notes}
+                      onChange={(e) => {
+                        updateTraveler(t.id, 'condition_notes', e.target.value);
+                        updateTraveler(t.id, 'has_health_conditions', Boolean(e.target.value.trim()));
+                      }}
+                      style={{ background: '#ffffff', border: '1px solid #cbd5e1', padding: '6px 10px', borderRadius: '6px' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeTraveler(t.id)}
+                      disabled={travelers.length <= 1}
+                      style={{
+                        color: travelers.length <= 1 ? '#cbd5e1' : '#f43f5e',
+                        padding: '6px',
+                        background: 'none',
+                        border: 'none',
+                        cursor: travelers.length <= 1 ? 'not-allowed' : 'pointer'
+                      }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
-        </button>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
