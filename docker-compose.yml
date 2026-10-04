@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trailkit_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - DEBUG=false
+      - HOST=0.0.0.0
+      - PORT=8000
+      - FRONTEND_URL=http://localhost
+      - CORS_ORIGINS=http://localhost,http://localhost:80,http://localhost:5173,http://127.0.0.1
+      - RATE_LIMIT_PER_MINUTE=60
+      - SESSION_SECRET_KEY=${SESSION_SECRET_KEY:-trailkit_production_secret_key_change_me_min32}
+      - GEMMA_API_BASE=${GEMMA_API_BASE:-http://localhost:11434/v1}
+      - GEMMA_MODEL_NAME=${GEMMA_MODEL_NAME:-gemma2:9b}
+      - TINKER_MODEL_ENDPOINT=${TINKER_MODEL_ENDPOINT:-}
+      - TINKER_API_KEY=${TINKER_API_KEY:-}
+      - SERPAPI_API_KEY=${SERPAPI_API_KEY:-}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY:-}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID:-21m00Tcm4TlvDq8ikWAM}
+      - WHATSAPP_WEBHOOK_SECRET=${WHATSAPP_WEBHOOK_SECRET:-dev_webhook_secret_key_32_bytes_min}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+    volumes:
+      - trailkit_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - trailkit_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trailkit_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - trailkit_net
+
+volumes:
+  trailkit_data:
+    driver: local
+
+networks:
+  trailkit_net:
+    driver: bridge
