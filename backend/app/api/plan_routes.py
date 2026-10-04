@@ -46,11 +46,14 @@ async def get_trip(
 @router.get("/trips", response_model=List[TripPlan])
 async def list_my_trips(
     x_user_token: Optional[str] = Header(None, alias="X-User-Token"),
+    limit: int = 20,
+    offset: int = 0,
 ):
-    """List all trips owned by the session token."""
+    """List all trips owned by the session token with pagination (PROMPT 2 Performance Audit)."""
     if not x_user_token:
         return []
-    return TripStorage.list_user_trips(user_token=x_user_token)
+    trips = TripStorage.list_user_trips(user_token=x_user_token)
+    return trips[offset : offset + limit]
 
 
 @router.patch("/trips/{trip_id}/checklist/{item_id}", response_model=TripPlan)
