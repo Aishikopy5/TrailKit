@@ -180,6 +180,7 @@ class PlannerService:
             is_fallback=is_fallback,
             generation_source=source_used,
             version=1,
+            custom_places=request.custom_places,
         )
 
     @classmethod
@@ -202,6 +203,7 @@ class PlannerService:
 
         prompt_payload = {
             "destination": request.destination,
+            "custom_places_to_visit": request.custom_places,
             "duration_days": (request.end_date - request.start_date).days + 1,
             "travelers": [{"age": t.age, "has_health_condition": t.has_health_conditions} for t in request.travelers],
             "style": request.activity_style,
@@ -264,6 +266,19 @@ class PlannerService:
                     grounded_sources=list(source_day.get("grounded_sources", [])),
                 )
             )
+
+        # Incorporate user's manually specified places into itinerary days
+        if request.custom_places:
+            for idx, place in enumerate(request.custom_places):
+                # Day 1 is acclimatization rest if high altitude; otherwise start from day 1
+                target_day_idx = (idx + 1) if (is_high_alt and len(adapted_itinerary) > 1) else idx
+                if target_day_idx < len(adapted_itinerary):
+                    adapted_itinerary[target_day_idx].title = f"Day {target_day_idx + 1}: Expedition to {place}"
+                    adapted_itinerary[target_day_idx].activities = [
+                        f"Explore {place} with guided wilderness orientation",
+                        f"Scenic photography and acclimatization pacing around {place}",
+                        f"Overnight mountain stay near {place}",
+                    ]
 
         adapted_packing: List[ChecklistItem] = [
             ChecklistItem(

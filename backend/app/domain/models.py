@@ -36,6 +36,7 @@ class TripRequest(BaseModel):
     activity_style: Literal["moderate", "trekking", "leisure", "adventure", "cultural"] = "moderate"
     dietary_preference: Optional[Literal["vegetarian", "vegan", "non-vegetarian", "jain", "halal", "any"]] = "any"
     special_notes: Optional[str] = Field(default="", max_length=500)
+    custom_places: List[str] = Field(default_factory=list, description="Manually specified places or waypoints to visit")
 
     @field_validator("destination", "special_notes")
     @classmethod
@@ -44,6 +45,18 @@ class TripRequest(BaseModel):
             return ""
         # Reject raw HTML or script tags
         return re.sub(r"<[^>]*>", "", v).strip()
+
+    @field_validator("custom_places")
+    @classmethod
+    def sanitize_places(cls, places: List[str]) -> List[str]:
+        cleaned = []
+        for p in places:
+            if not p:
+                continue
+            clean_p = re.sub(r"<[^>]*>", "", p).strip()
+            if clean_p:
+                cleaned.append(clean_p[:100])
+        return cleaned[:20]
 
     @model_validator(mode="after")
     def validate_dates_and_travelers(self):
@@ -121,6 +134,7 @@ class TripPlan(BaseModel):
     is_fallback: bool = False
     generation_source: str = "tinker-gemma"
     version: int = 1
+    custom_places: List[str] = Field(default_factory=list)
 
 
 # Chatbot Interaction Models (S3, L14, L17)

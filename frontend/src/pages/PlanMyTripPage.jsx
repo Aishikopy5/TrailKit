@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import {
   Compass,
   MapPin,
+  MapPinned,
   Calendar,
   Users,
   Mountain,
@@ -17,7 +18,11 @@ import {
   Backpack,
   ArrowRight,
   Info,
-  Clock
+  Clock,
+  ArrowUp,
+  ArrowDown,
+  Star,
+  Navigation
 } from 'lucide-react';
 import { createTripPlan } from '../services/api';
 
@@ -31,6 +36,86 @@ const QUICK_DESTINATIONS = [
   { name: "Manali & Solang", alt: 2050, region: "Himachal Pradesh", style: "moderate" },
   { name: "Gulmarg Alpine", alt: 2650, region: "Kashmir", style: "adventure" },
 ];
+
+const DESTINATION_LANDMARKS_MAP = {
+  ladakh: [
+    "Pangong Tso (High Altitude Lake)",
+    "Nubra Valley & Hunder Sand Dunes",
+    "Khardung La Pass (5,359m)",
+    "Diskit Monastery & Giant Buddha",
+    "Magnetic Hill & Hall of Fame",
+    "Tso Moriri High-Altitude Wetland",
+    "Sangam (Indus-Zanskar Confluence)",
+    "Hemis Monastery",
+    "Shanti Stupa (Leh Sunset Viewpoint)",
+    "Thiksey Monastery"
+  ],
+  spiti: [
+    "Kaza Town Base",
+    "Key Monastery (Kye Gompa)",
+    "Chandratal Glacial Lake",
+    "Hikkim (World's Highest Post Office)",
+    "Komic Village (4,587m)",
+    "Langza Golden Buddha & Fossils",
+    "Pin Valley National Park",
+    "Dhankar Monastery & High Lake",
+    "Kunzum Pass (4,551m)",
+    "Chicham Suspension Bridge"
+  ],
+  manali: [
+    "Solang Valley Adventure Base",
+    "Rohtang Pass (3,978m)",
+    "Atal Tunnel Sissu Waterfall",
+    "Jogini Waterfall Nature Hike",
+    "Hadimba Ancient Cedar Temple",
+    "Old Manali River Cafe Trail",
+    "Vashisht Natural Sulphur Springs",
+    "Hampta Pass Base Camp (Jobra)",
+    "Gulaba Snow Point"
+  ],
+  kedarnath: [
+    "Kedarnath Temple Sanctuary",
+    "Bhairavnath Peak Viewpoint",
+    "Gaurikund Base & Hot Springs",
+    "Vasuki Tal Alpine Lake",
+    "Chorabari Glacier / Gandhi Sarovar",
+    "Sonprayag Confluence",
+    "Jungle Chatti Trail Halt"
+  ],
+  roopkund: [
+    "Lohajung Base Ridge",
+    "Didna Mountain Village",
+    "Ali Bugyal Alpine Meadow",
+    "Bedni Bugyal Camping Grounds",
+    "Ghora Lotani High Ridge",
+    "Bhagwabasa Stone Caves",
+    "Roopkund Mystery Lake (4,800m)"
+  ],
+  kasol: [
+    "Kasol Riverside Pine Trail",
+    "Kheerganga Natural Thermal Springs",
+    "Tosh Village Viewpoint",
+    "Malana Historic Ancient Village",
+    "Chalal Nature Woods Walk",
+    "Grahan Remote Trekking Route"
+  ],
+  gulmarg: [
+    "Gulmarg Gondola Phase 2",
+    "Apharwat Peak (4,390m)",
+    "Alpathar High Frozen Lake",
+    "Tangmarg Dense Pine Forest",
+    "Drung Frozen Waterfall",
+    "Strawberry Valley Meadow Walk"
+  ],
+  general: [
+    "Panoramic Mountain Summit Viewpoint",
+    "Hidden Alpine Lake Campsite",
+    "Historic Monastery / Heritage Landmark",
+    "High-Altitude Mountain Pass",
+    "Glacial River Valley Camp",
+    "Forest Waterfall Nature Trail"
+  ]
+};
 
 const PREOWNED_GEAR_OPTIONS = [
   "4-Season All-Weather Tent",
@@ -50,7 +135,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
   const twoWeeksLater = new Date(Date.now() + 13 * 86400000).toISOString().split('T')[0];
 
   const [origin, setOrigin] = useState("New Delhi, India");
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState("Leh, Ladakh");
   const [startDate, setStartDate] = useState(nextWeek);
   const [endDate, setEndDate] = useState(twoWeeksLater);
   const [currency, setCurrency] = useState("INR");
@@ -59,6 +144,14 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
   const [dietaryPreference, setDietaryPreference] = useState("vegetarian");
   const [specialNotes, setSpecialNotes] = useState("");
   const [preownedGear, setPreownedGear] = useState([]);
+
+  // Manual Places to Visit State
+  const [customPlaces, setCustomPlaces] = useState([
+    { id: "cp_1", name: "Pangong Tso Lake", mustVisit: true },
+    { id: "cp_2", name: "Nubra Valley (Hunder Dunes)", mustVisit: true },
+    { id: "cp_3", name: "Khardung La Pass (5,359m)", mustVisit: false },
+  ]);
+  const [newPlaceInput, setNewPlaceInput] = useState("");
 
   // Travelers
   const [travelers, setTravelers] = useState([
@@ -82,6 +175,69 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
   const isHighAltitude = /leh|ladakh|spiti|kaza|kedarnath|roopkund|rohtang|kheerganga|gulmarg|tungnath|chadar|everest|annapurna/i.test(destination);
   const hasToddler = travelers.some(t => Number(t.age) < 5);
   const hasSenior = travelers.some(t => Number(t.age) >= 60);
+
+  // Manual Places Helpers
+  const handleAddPlace = (nameToAdd) => {
+    const name = (nameToAdd || newPlaceInput).trim();
+    if (!name || name.length < 2) return;
+    if (customPlaces.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+      setNewPlaceInput("");
+      return;
+    }
+    setCustomPlaces([
+      ...customPlaces,
+      {
+        id: `cp_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        name,
+        mustVisit: true
+      }
+    ]);
+    setNewPlaceInput("");
+  };
+
+  const handleRemovePlace = (id) => {
+    setCustomPlaces(customPlaces.filter(p => p.id !== id));
+  };
+
+  const handleMovePlace = (index, delta) => {
+    const newIdx = index + delta;
+    if (newIdx < 0 || newIdx >= customPlaces.length) return;
+    const reordered = [...customPlaces];
+    const temp = reordered[index];
+    reordered[index] = reordered[newIdx];
+    reordered[newIdx] = temp;
+    setCustomPlaces(reordered);
+  };
+
+  const handleToggleMustVisit = (id) => {
+    setCustomPlaces(customPlaces.map(p => p.id === id ? { ...p, mustVisit: !p.mustVisit } : p));
+  };
+
+  const getSuggestedLandmarks = () => {
+    const dest = destination.toLowerCase();
+    if (dest.includes("leh") || dest.includes("ladakh") || dest.includes("nubra") || dest.includes("pangong")) {
+      return DESTINATION_LANDMARKS_MAP.ladakh;
+    }
+    if (dest.includes("spiti") || dest.includes("kaza") || dest.includes("chandratal")) {
+      return DESTINATION_LANDMARKS_MAP.spiti;
+    }
+    if (dest.includes("manali") || dest.includes("solang") || dest.includes("rohtang")) {
+      return DESTINATION_LANDMARKS_MAP.manali;
+    }
+    if (dest.includes("kedarnath") || dest.includes("gaurikund")) {
+      return DESTINATION_LANDMARKS_MAP.kedarnath;
+    }
+    if (dest.includes("roopkund") || dest.includes("lohajung")) {
+      return DESTINATION_LANDMARKS_MAP.roopkund;
+    }
+    if (dest.includes("kasol") || dest.includes("kheerganga") || dest.includes("parvati") || dest.includes("tosh")) {
+      return DESTINATION_LANDMARKS_MAP.kasol;
+    }
+    if (dest.includes("gulmarg") || dest.includes("kashmir") || dest.includes("srinagar")) {
+      return DESTINATION_LANDMARKS_MAP.gulmarg;
+    }
+    return DESTINATION_LANDMARKS_MAP.general;
+  };
 
   const toggleGear = (item) => {
     if (preownedGear.includes(item)) {
@@ -139,14 +295,19 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
       return;
     }
 
-    // Prepare note including pre-owned gear
+    // Build enriched notes with custom places and pre-owned gear
     let enrichedNotes = specialNotes.trim();
+    if (customPlaces.length > 0) {
+      const placesStr = customPlaces.map((p, idx) => `${idx + 1}. ${p.name}${p.mustVisit ? ' [Must-Visit]' : ''}`).join(', ');
+      enrichedNotes += ` [User requested stops in order: ${placesStr}]`;
+    }
     if (preownedGear.length > 0) {
       enrichedNotes += ` [Travelers already own: ${preownedGear.join(', ')}]`;
     }
 
     const payload = {
       destination: destination.trim(),
+      custom_places: customPlaces.map(p => p.name),
       start_date: startDate,
       end_date: endDate,
       budget_currency: currency,
@@ -174,6 +335,8 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
       setIsSubmitting(false);
     }
   };
+
+  const suggestedLandmarks = getSuggestedLandmarks();
 
   return (
     <div style={{ padding: '24px 0 60px' }}>
@@ -207,7 +370,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
               Plan Your Custom Expedition
             </h1>
             <p style={{ fontSize: '1.05rem', color: '#e0f2fe', lineHeight: 1.6 }}>
-              Tailor every dimension of your wilderness journey. Enter your custom destination, travelers' ages and health requirements, gear, and budget. Our Gemma 2 AI planner and deterministic safety validator will craft a fully verified plan.
+              Tailor every dimension of your wilderness journey. Enter your custom destination, manually specify the exact places and stops you wish to visit, adjust travelers, gear, and budget. Our Gemma 2 AI planner and deterministic safety validator will craft a bespoke, verified route.
             </p>
           </div>
         </div>
@@ -235,7 +398,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '28px' }}>
             
-            {/* LEFT COLUMN: Destination & Dates & Style */}
+            {/* LEFT COLUMN: Destination, Manual Places, Dates & Gear */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
               {/* Card 1: Destination & Departure */}
@@ -253,7 +416,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <label style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', display: 'block', marginBottom: '6px' }}>
-                      Expedition Destination (Any place, pass, or mountain region) *
+                      Expedition Destination / Region *
                     </label>
                     <input
                       type="text"
@@ -349,7 +512,228 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 </div>
               </div>
 
-              {/* Card 2: Dates & Expedition Style */}
+              {/* Card 2: Manual Places & Stops to Visit (NEW REQUEST!) */}
+              <div style={{
+                background: '#ffffff',
+                borderRadius: '24px',
+                padding: '28px',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+                border: '2px solid #38bdf8'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                    <MapPinned size={20} color="#0284c7" /> 2. Places & Stops to Visit (Manual Builder)
+                  </h2>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 800, background: '#e0f2fe', color: '#0369a1', padding: '3px 10px', borderRadius: '9999px' }}>
+                    {customPlaces.length} Place{customPlaces.length !== 1 ? 's' : ''} Added
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: '#64748b', lineHeight: 1.5, marginBottom: '16px' }}>
+                  Manually enter the exact landmarks, lakes, mountain passes, valleys, or monasteries you wish to visit. You can reorder them to customize the sequence of your expedition itinerary.
+                </p>
+
+                {/* Manual Input Bar */}
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+                  <input
+                    type="text"
+                    placeholder="Type place name (e.g. Pangong Lake, Chandratal, Khardung La)..."
+                    value={newPlaceInput}
+                    onChange={(e) => setNewPlaceInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddPlace();
+                      }
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: '10px 14px',
+                      borderRadius: '12px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.9rem',
+                      outline: 'none',
+                      background: '#f8fafc'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleAddPlace()}
+                    className="btn-primary"
+                    style={{ padding: '10px 18px', fontSize: '0.85rem', flexShrink: 0 }}
+                  >
+                    <Plus size={16} /> Add Stop
+                  </button>
+                </div>
+
+                {/* Destination-Aware Suggestions */}
+                <div style={{ marginBottom: '18px' }}>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', marginBottom: '8px' }}>
+                    💡 Suggested Landmarks for {destination || "Your Region"} (click to add):
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {suggestedLandmarks.map((placeName) => {
+                      const isAlreadyAdded = customPlaces.some(p => p.name.toLowerCase() === placeName.toLowerCase());
+                      return (
+                        <button
+                          key={placeName}
+                          type="button"
+                          disabled={isAlreadyAdded}
+                          onClick={() => handleAddPlace(placeName)}
+                          style={{
+                            background: isAlreadyAdded ? '#f1f5f9' : '#eff6ff',
+                            color: isAlreadyAdded ? '#94a3b8' : '#1d4ed8',
+                            border: `1px solid ${isAlreadyAdded ? '#e2e8f0' : '#bfdbfe'}`,
+                            padding: '4px 10px',
+                            borderRadius: '8px',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            cursor: isAlreadyAdded ? 'default' : 'pointer',
+                            transition: 'all 0.15s',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          {isAlreadyAdded ? '✓' : '+'} {placeName}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Ordered List of Added Stops */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {customPlaces.length === 0 ? (
+                    <div style={{
+                      padding: '20px',
+                      textAlign: 'center',
+                      background: '#f8fafc',
+                      borderRadius: '12px',
+                      border: '1px dashed #cbd5e1',
+                      color: '#64748b',
+                      fontSize: '0.82rem'
+                    }}>
+                      No specific stops added yet. Type a place name above or click any suggested landmark.
+                    </div>
+                  ) : (
+                    customPlaces.map((place, idx) => (
+                      <div
+                        key={place.id}
+                        style={{
+                          background: '#f8fafc',
+                          border: '1px solid #e2e8f0',
+                          borderRadius: '12px',
+                          padding: '10px 14px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '10px',
+                          transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                          <span style={{
+                            background: '#0284c7',
+                            color: '#ffffff',
+                            width: '24px',
+                            height: '24px',
+                            borderRadius: '50%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '0.72rem',
+                            fontWeight: 900,
+                            flexShrink: 0
+                          }}>
+                            {idx + 1}
+                          </span>
+                          <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#0f172a' }}>
+                            {place.name}
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleMustVisit(place.id)}
+                            style={{
+                              background: place.mustVisit ? '#ecfdf5' : '#f1f5f9',
+                              color: place.mustVisit ? '#059669' : '#64748b',
+                              border: `1px solid ${place.mustVisit ? '#a7f3d0' : '#cbd5e1'}`,
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '0.7rem',
+                              fontWeight: 800,
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '3px'
+                            }}
+                            title="Toggle priority"
+                          >
+                            <Star size={11} fill={place.mustVisit ? "#059669" : "transparent"} />
+                            <span>{place.mustVisit ? 'Must Visit' : 'Scenic Stop'}</span>
+                          </button>
+
+                          {/* Reorder Arrows */}
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() => handleMovePlace(idx, -1)}
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              padding: '3px 6px',
+                              cursor: idx === 0 ? 'not-allowed' : 'pointer',
+                              opacity: idx === 0 ? 0.3 : 1
+                            }}
+                            title="Move Up in Route"
+                          >
+                            <ArrowUp size={13} color="#475569" />
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={idx === customPlaces.length - 1}
+                            onClick={() => handleMovePlace(idx, 1)}
+                            style={{
+                              background: '#ffffff',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              padding: '3px 6px',
+                              cursor: idx === customPlaces.length - 1 ? 'not-allowed' : 'pointer',
+                              opacity: idx === customPlaces.length - 1 ? 0.3 : 1
+                            }}
+                            title="Move Down in Route"
+                          >
+                            <ArrowDown size={13} color="#475569" />
+                          </button>
+
+                          {/* Delete */}
+                          <button
+                            type="button"
+                            onClick={() => handleRemovePlace(place.id)}
+                            style={{
+                              background: '#fef2f2',
+                              border: '1px solid #fecaca',
+                              borderRadius: '6px',
+                              padding: '3px 6px',
+                              cursor: 'pointer',
+                              color: '#dc2626'
+                            }}
+                            title="Remove Stop"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Card 3: Dates & Expedition Style */}
               <div style={{
                 background: '#ffffff',
                 borderRadius: '24px',
@@ -358,7 +742,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 border: '1px solid #e2e8f0'
               }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Calendar size={20} color="#0284c7" /> 2. Dates & Expedition Style
+                  <Calendar size={20} color="#0284c7" /> 3. Dates & Expedition Style
                 </h2>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', marginBottom: '16px' }}>
@@ -461,7 +845,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 </div>
               </div>
 
-              {/* Card 3: Pre-Owned Gear Checklist */}
+              {/* Card 4: Pre-Owned Gear Checklist */}
               <div style={{
                 background: '#ffffff',
                 borderRadius: '24px',
@@ -470,7 +854,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 border: '1px solid #e2e8f0'
               }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Backpack size={20} color="#0284c7" /> 3. Gear You Already Own
+                  <Backpack size={20} color="#0284c7" /> 4. Gear You Already Own
                 </h2>
                 <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '14px' }}>
                   Select items you already own so the budget and packing calculator doesn't add purchase or rental costs for them:
@@ -515,7 +899,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
             {/* RIGHT COLUMN: Travelers, Budget, & Notes */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
-              {/* Card 4: Travelers & Health Profiles (Rule L1, L4) */}
+              {/* Card 5: Travelers & Health Profiles (Rule L1, L4) */}
               <div style={{
                 background: '#ffffff',
                 borderRadius: '24px',
@@ -525,7 +909,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
-                    <Users size={20} color="#0284c7" /> 4. Travelers & Medical Profiles
+                    <Users size={20} color="#0284c7" /> 5. Travelers & Medical Profiles
                   </h2>
                   <button
                     type="button"
@@ -658,7 +1042,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 </div>
               </div>
 
-              {/* Card 5: Budget & Dietary Preferences */}
+              {/* Card 6: Budget & Dietary Preferences */}
               <div style={{
                 background: '#ffffff',
                 borderRadius: '24px',
@@ -667,7 +1051,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 border: '1px solid #e2e8f0'
               }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <DollarSign size={20} color="#0284c7" /> 5. Budget & Nutrition
+                  <DollarSign size={20} color="#0284c7" /> 6. Budget & Nutrition
                 </h2>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '14px' }}>
@@ -741,7 +1125,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 </div>
               </div>
 
-              {/* Card 6: Special Preferences & Instructions */}
+              {/* Card 7: Special Preferences & Instructions */}
               <div style={{
                 background: '#ffffff',
                 borderRadius: '24px',
@@ -750,7 +1134,7 @@ export default function PlanMyTripPage({ onPlanCreated, onBackToPlanner }) {
                 border: '1px solid #e2e8f0'
               }}>
                 <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0f172a', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Sparkles size={20} color="#0284c7" /> 6. Special Requests & Preferences
+                  <Sparkles size={20} color="#0284c7" /> 7. Special Requests & Preferences
                 </h2>
 
                 <textarea
