@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Mountain, ShieldCheck, Link2, DollarSign } from 'lucide-react';
+import { Calendar, Mountain, ShieldCheck, Link2, DollarSign, Clock, Navigation } from 'lucide-react';
 
 export default function ItineraryView({ itinerary, currency = "INR" }) {
   if (!itinerary || itinerary.length === 0) return null;
@@ -27,7 +27,7 @@ export default function ItineraryView({ itinerary, currency = "INR" }) {
               </div>
               <div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>{day.title}</h3>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
                   {day.altitude_m && (
                     <span className="badge badge-cyan" style={{ fontSize: '0.7rem' }}>
                       <Mountain size={12} /> {day.altitude_m}m
@@ -36,6 +36,38 @@ export default function ItineraryView({ itinerary, currency = "INR" }) {
                   {day.acclimatization_rest && (
                     <span className="badge badge-amber" style={{ fontSize: '0.7rem' }}>
                       <ShieldCheck size={12} /> Mandatory Acclimatization
+                    </span>
+                  )}
+                  {day.best_time_window && (
+                    <span style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      background: 'rgba(16, 185, 129, 0.12)',
+                      color: '#10b981',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      border: '1px solid rgba(16, 185, 129, 0.3)'
+                    }}>
+                      <Clock size={12} /> Best Time: {day.best_time_window}
+                    </span>
+                  )}
+                  {day.fastest_route_corridor && (
+                    <span style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      background: 'rgba(56, 189, 248, 0.12)',
+                      color: '#38bdf8',
+                      padding: '3px 8px',
+                      borderRadius: '6px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      border: '1px solid rgba(56, 189, 248, 0.3)'
+                    }}>
+                      <Navigation size={12} /> Fastest Route: {day.fastest_route_corridor}
                     </span>
                   )}
                 </div>

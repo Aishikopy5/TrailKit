@@ -84,3 +84,39 @@ def test_export_and_delete_with_idor():
     # 6. Subsequent GET returns 404
     get_res = client.get(f"/api/trips/{trip_id}", headers={"X-User-Token": owner_token})
     assert get_res.status_code == 404
+
+
+def test_custom_places_with_best_times_and_corridors():
+    """Verify custom stops receive optimal visiting time windows and fastest route corridors."""
+    today = date.today()
+    payload = {
+        "destination": "Leh, Ladakh",
+        "custom_places": ["Khardung La Pass (5,359m)", "Nubra Valley (Hunder)", "Pangong Tso Lake"],
+        "start_date": str(today),
+        "end_date": str(today + timedelta(days=5)),
+        "travelers": [{"age": 28, "name": "Elena"}],
+        "max_budget": 35000.0,
+        "budget_currency": "INR",
+        "activity_style": "adventure"
+    }
+    res = client.post("/api/plan", json=payload, headers={"X-User-Token": "token_elena_route"})
+    assert res.status_code == 201
+    plan = res.json()
+    assert len(plan["custom_places"]) == 3
+    assert plan["custom_places"][0] == "Khardung La Pass (5,359m)"
+    
+    itinerary = plan["itinerary"]
+    assert len(itinerary) >= 4
+    
+    # Day 1 is acclimatization rest for high altitude Ladakh
+    assert itinerary[0]["acclimatization_rest"] is True
+    
+    # Days 2, 3, 4 should incorporate the stops with best times & fastest routes
+    custom_days = [day for day in itinerary if any(stop in day["title"] for stop in ["Khardung", "Nubra", "Pangong"])]
+    assert len(custom_days) >= 2
+    
+    for day in custom_days:
+        assert day["best_time_window"] is not None
+        assert day["fastest_route_corridor"] is not None
+        assert any("optimal" in act.lower() or "visit" in act.lower() for act in day["activities"])
+        assert any("route" in act.lower() or "corridor" in act.lower() or "transit" in act.lower() for act in day["activities"])

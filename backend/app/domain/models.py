@@ -82,6 +82,8 @@ class ItineraryDay(BaseModel):
     safety_guidance: str = Field(default="")
     estimated_cost: float = Field(default=0.0, ge=0.0)
     grounded_sources: List[str] = Field(default_factory=list)
+    best_time_window: Optional[str] = Field(default=None, max_length=200)
+    fastest_route_corridor: Optional[str] = Field(default=None, max_length=300)
 
 
 class ChecklistItem(BaseModel):
