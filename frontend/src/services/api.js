@@ -117,3 +117,59 @@ export async function fetchVoiceBriefing(tripId) {
   }
   return res.json();
 }
+
+export async function fetchDestinations() {
+  const res = await fetch(`${API_BASE}/destinations`);
+  if (!res.ok) {
+    throw new Error("Failed to load destinations atlas");
+  }
+  return res.json();
+}
+
+export async function fetchPackages() {
+  const res = await fetch(`${API_BASE}/packages`);
+  if (!res.ok) {
+    throw new Error("Failed to load expedition packages");
+  }
+  return res.json();
+}
+
+export async function fetchMyTrips(limit = 20, offset = 0) {
+  const token = getUserToken();
+  const res = await fetch(`${API_BASE}/trips?limit=${limit}&offset=${offset}`, {
+    headers: {
+      "X-User-Token": token,
+    },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to load saved trips");
+  }
+  return res.json();
+}
+
+export async function deleteTrip(tripId) {
+  const token = getUserToken();
+  const res = await fetch(`${API_BASE}/trips/${tripId}`, {
+    method: "DELETE",
+    headers: {
+      "X-User-Token": token,
+    },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to delete trip");
+  }
+  return res.json();
+}
+
+export async function exportTrip(tripId) {
+  const token = getUserToken();
+  const res = await fetch(`${API_BASE}/trips/${tripId}/export`, {
+    headers: {
+      "X-User-Token": token,
+    },
+  });
+  if (!res.ok) {
+    throw new Error("Failed to export trip emergency card");
+  }
+  return res.json();
+}

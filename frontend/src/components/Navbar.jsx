@@ -1,7 +1,17 @@
 import React from 'react';
 import { Send, ShieldCheck, Cpu, HardDrive } from 'lucide-react';
 
-export default function Navbar({ isFallback }) {
+export default function Navbar({ currentPage = 'home', onNavigate = () => {}, isFallback }) {
+  const navItems = [
+    { id: 'home', label: 'Planner' },
+    { id: 'packages', label: 'Trail Packages' },
+    { id: 'destinations', label: 'Altitude Atlas' },
+    { id: 'bookings', label: 'My Expeditions' },
+    { id: 'pricing', label: 'Classes & Tiers' },
+    { id: 'emergency', label: 'SOS Protocols' },
+    { id: 'about', label: 'Safety Architecture' }
+  ];
+
   return (
     <header style={{
       background: 'rgba(2, 132, 199, 0.95)',
@@ -11,16 +21,21 @@ export default function Navbar({ isFallback }) {
       position: 'sticky',
       top: 0,
       zIndex: 100,
-      padding: '14px 0',
+      padding: '12px 0',
       boxShadow: '0 4px 20px rgba(2, 132, 199, 0.25)',
     }}>
       <div className="container" style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '12px'
       }}>
         {/* Logo (Matching Paper Plane Travel Logo) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}
+          onClick={() => onNavigate('home')}
+        >
           <div style={{
             background: '#ffffff',
             width: '36px',
@@ -50,37 +65,49 @@ export default function Navbar({ isFallback }) {
           </div>
         </div>
 
-        {/* Center Nav Links (matching reference top bar) */}
-        <nav style={{ display: 'flex', alignItems: 'center', gap: '28px' }}>
-          <a href="#planner-search-section" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 700, opacity: 0.95 }}>
-            Expedition Planner
-          </a>
-          <a href="#packages-section" style={{ color: '#e0f2fe', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>
-            Popular Trails
-          </a>
-          <a href="#how-it-works" style={{ color: '#e0f2fe', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>
-            How It Works
-          </a>
-          <a href="#safety-section" style={{ color: '#e0f2fe', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>
-            Safety Guardrails
-          </a>
+        {/* Center Nav Links */}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+          {navItems.map(item => {
+            const isActive = currentPage === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onNavigate(item.id)}
+                style={{
+                  background: isActive ? 'rgba(255, 255, 255, 0.22)' : 'transparent',
+                  color: isActive ? '#ffffff' : '#e0f2fe',
+                  border: isActive ? '1px solid rgba(255, 255, 255, 0.35)' : '1px solid transparent',
+                  padding: '6px 14px',
+                  borderRadius: '9999px',
+                  fontSize: '0.82rem',
+                  fontWeight: isActive ? 800 : 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.1)' : 'none'
+                }}
+              >
+                {item.label}
+              </button>
+            );
+          })}
         </nav>
 
-        {/* Right Status Badges & Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        {/* Right Status Badges */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <span style={{
             background: 'rgba(255, 255, 255, 0.2)',
             color: '#ffffff',
             border: '1px solid rgba(255, 255, 255, 0.35)',
-            padding: '6px 14px',
+            padding: '5px 12px',
             borderRadius: '9999px',
-            fontSize: '0.75rem',
+            fontSize: '0.72rem',
             fontWeight: 700,
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '5px',
           }}>
-            <ShieldCheck size={14} color="#34d399" />
+            <ShieldCheck size={13} color="#34d399" />
             <span>Validator Active</span>
           </span>
 
@@ -88,16 +115,16 @@ export default function Navbar({ isFallback }) {
             background: 'rgba(255, 255, 255, 0.15)',
             color: '#ffffff',
             border: '1px solid rgba(255, 255, 255, 0.25)',
-            padding: '6px 14px',
+            padding: '5px 12px',
             borderRadius: '9999px',
-            fontSize: '0.75rem',
+            fontSize: '0.72rem',
             fontWeight: 700,
             display: 'inline-flex',
             alignItems: 'center',
-            gap: '6px',
+            gap: '5px',
           }}>
-            <Cpu size={14} color="#e0f2fe" />
-            <span>Gemma 2 Open-Weight</span>
+            <Cpu size={13} color="#e0f2fe" />
+            <span>Gemma 2</span>
           </span>
         </div>
       </div>

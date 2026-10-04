@@ -51,9 +51,20 @@ class TripStorage:
         return trip
 
     @classmethod
-    def list_user_trips(cls, user_token: str) -> List[TripPlan]:
-        """List all trips owned by a particular session token."""
+    def list_user_trips(cls, user_token: Optional[str]) -> List[TripPlan]:
+        """List all trips owned by user_token (S10 IDOR protection)."""
+        if not user_token:
+            return []
         return [t for t in cls._trips.values() if t.owner_token == user_token]
+
+    @classmethod
+    def delete_trip(cls, trip_id: str, user_token: str) -> bool:
+        """Delete trip with ownership check (Rule V1 delete-my-data)."""
+        existing = cls.get_trip(trip_id, user_token)
+        if trip_id in cls._trips:
+            del cls._trips[trip_id]
+            return True
+        return False
 
     @classmethod
     def clear_all(cls):

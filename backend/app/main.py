@@ -16,6 +16,8 @@ from app.api.plan_routes import router as plan_router
 from app.api.chat_routes import router as chat_router
 from app.api.voice_routes import router as voice_router
 from app.api.health import router as health_router
+from app.api.destination_routes import router as destination_router
+from app.api.webhook_routes import router as webhook_router
 
 # Setup structured logger
 logging.basicConfig(
@@ -80,6 +82,8 @@ app.include_router(plan_router)
 app.include_router(chat_router)
 app.include_router(voice_router)
 app.include_router(health_router)
+app.include_router(destination_router)
+app.include_router(webhook_router)
 
 
 @app.get("/")
