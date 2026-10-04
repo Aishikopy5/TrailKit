@@ -152,11 +152,11 @@ export default function ThreeBackground({ destination = "Leh, Ladakh" }) {
     window.addEventListener('mousemove', handleMouseMove);
 
     let animationFrameId;
-    let clock = new THREE.Clock();
+    const startTime = performance.now();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      const elapsedTime = clock.getElapsedTime();
+      const elapsedTime = (performance.now() - startTime) * 0.001;
 
       // Smooth camera lerp with mouse movement
       targetX += (mouseX * 8 - targetX) * 0.05;
